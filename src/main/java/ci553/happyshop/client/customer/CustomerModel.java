@@ -81,6 +81,26 @@ public class CustomerModel {
         updateView();
     }
 
+    void makeOrganisedTrolley(){
+        for(Product p: trolley){
+            if(p.getProductId().equals(theProduct.getProductId())){
+                p.setOrderedQuantity(p.getOrderedQuantity()+ theProduct.getOrderedQuantity());
+                return;
+            }
+        }
+        Product pNew= new Product(theProduct.getProductId(), theProduct.getProductDescription(), theProduct.getProductImageName(), theProduct.getUnitPrice(), theProduct.getStockQuantity());
+        pNew.setOrderedQuantity(theProduct.getOrderedQuantity());
+        trolley.add(pNew);
+        sortTrolleyByProductId();
+
+    } //increases quantity when same product is added more than once
+
+    void sortTrolleyByProductId(){
+        trolley.sort(Comparator.comparing(Product::getProductId));
+    }
+
+    public RemoveProductNotifier removeProductNotifier;{}
+
     void checkOut() throws IOException, SQLException {
         if(!trolley.isEmpty()){
             // Group the products in the trolley by productId to optimize stock checking
