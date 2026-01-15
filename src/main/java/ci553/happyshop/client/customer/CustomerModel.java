@@ -29,6 +29,9 @@ public class CustomerModel {
     private Product theProduct = null; // product found from search
     private ArrayList<Product> trolley = new ArrayList<>(); // a list of products in trolley
     ArrayList<Product> searchResult = new ArrayList<>();
+    private boolean looksLikeProductId(String s) {
+        return s !=null && s.matches("//d+");
+    }
 
     // Four UI elements to be passed to CustomerView for display updates.
     private String imageName = "imageHolder.jpg";                // Image to show in product preview (Search Page)
@@ -38,62 +41,58 @@ public class CustomerModel {
 
     //SELECT productID, Product Name, description, image, unitPrice,inStock quantity
     void search() throws SQLException {
-        String productId = cusView.tfId.getText().trim();
-        String productName = cusView.tfName.getText().trim();
+        String keyword = cusView.tfName.getText().trim();
 
-        //both empty
-        if (productId.isEmpty() && productName.isEmpty()) {
+        //empty
+        if (keyword.isEmpty()) {
             theProduct = null;
+            searchResult.clear();
             displayLaSearchResult = "Please type a Product ID or Name.";
             updateView();
             return;
         }
 
         //ID priority
-        if (!productId.isEmpty()) {
-            theProduct = databaseRW.searchByProductId(productId); //search database
+        if (looksLikeProductId(keyword)) {
+            searchResult.clear();
+            theProduct = databaseRW.searchByProductId(keyword); //search database
+
             if (theProduct != null && theProduct.getStockQuantity() > 0) {
                 double unitPrice = theProduct.getUnitPrice();
                 String description = theProduct.getProductDescription();
                 int stock = theProduct.getStockQuantity();
 
-                String baseInfo = String.format("Product_Id: %s\n%s,\nPrice: £%.2f", productId, description, unitPrice);
+                String baseInfo = String.format("Product_Id: %s\n%s,\nPrice: £%.2f", keyword, description, unitPrice);
                 String quantityInfo = stock < 100 ? String.format("\n%d units left.", stock) : "";
                 displayLaSearchResult = baseInfo + quantityInfo;
-                //System.out.println(displayLaSearchResult);
+                System.out.println(displayLaSearchResult);
 
             } else {
                 theProduct = null;
-                displayLaSearchResult = "No Product was found with ID " + productId;
-                System.out.println("No Product was found with ID " + productId);
+                displayLaSearchResult = "No Product was found with ID " + keyword;
+                System.out.println("No Product was found with ID " + keyword);
             }
 
             updateView();
             return;
         }
     theProduct =null;
-    searchResult = databaseRW.searchProduct(productName);
+    searchResult = databaseRW.searchProduct(keyword);
     if(searchResult ==null||searchResult.isEmpty()) {
-        displayLaSearchResult = "NO product was found" + productName;
-        System.out.println("NO product was found" + productName);
+        displayLaSearchResult = "NO product was found" + keyword;
+        System.out.println("DEBUG name search results = " + (searchResult == null ? "null" : 0));
     }
     else {
-        StringBuilder sb = new StringBuilder();
-        sb.append(searchResult.size()).append(" product(s) found:\n\n");
-        for (Product p : searchResult) {
-            sb.append(String.format(
-                    "ID: %s\n%s\nPrice: £%.2f\nStock: %d\n\n",
-                    p.getProductId(), p.getProductDescription(), p.getUnitPrice(), p.getStockQuantity()
-            ));
-        }
-        displayLaSearchResult = sb.toString();
+        displayLaSearchResult = searchResult.size() + " products found";
     }
-    searchResult.clear();
     updateView();
     }
 
     void addToTrolley(){
+
         if(theProduct!= null){
+            System.out.println("Test addToTrolley entered. theProduct=" + (theProduct == null ? "null" : theProduct.getProductId())
+                    + " qty=" + (theProduct == null ? "null" : theProduct.getOrderedQuantity()));
 
             // trolley.add(theProduct) — Product is appended to the end of the trolley.
             // To keep the trolley organized, add code here or call a method that:
@@ -241,6 +240,7 @@ public class CustomerModel {
             imageName = "imageHolder.jpg";
         }
         cusView.update(imageName, displayLaSearchResult, displayTaTrolley,displayTaReceipt);
+        System.out.println("DEBUG pushing results to view" + (searchResult == null ? "" : searchResult));
         cusView.updateSearchResult(searchResult);
     }
      // extra notes:
@@ -255,9 +255,11 @@ public class CustomerModel {
         this.theProduct = theProduct;
     }
     void addFromSearchResult(Product p, int qty) {
-        if(theProduct == null || qty <= 0) return;
+        System.out.println("Test model addFromSearchResult product=" + p.getProductId() + " qty=" + qty);
+        if(qty <= 0) return;
         Product chosen = new Product(p.getProductId(), p.getProductDescription(), p.getProductImageName(), p.getUnitPrice(), p.getStockQuantity());
         chosen.setOrderedQuantity(qty);
+        System.out.println("Test model addFromSearchResult product=" + p.getProductId() + " qty=" + qty);
         theProduct = chosen;
         addToTrolley();
     }

@@ -9,6 +9,7 @@ import java.sql.SQLException;
 public class CustomerController {
     public CustomerModel cusModel;
     public void addFromSearchResult(Product p, int qty) throws SQLException {
+        System.out.println("DEBUG controller addFromSearchResult called qty=" + qty);
         cusModel.addFromSearchResult(p, qty);
     }
 
