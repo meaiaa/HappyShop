@@ -37,9 +37,20 @@ public class CustomerModel {
     //SELECT productID, description, image, unitPrice,inStock quantity
     void search() throws SQLException {
         String productId = cusView.tfId.getText().trim();
-        if(!productId.isEmpty()){
+        String productName = cusView.tfName.getText().trim();
+
+        //both empty
+        if (productId.isEmpty() && productName.isEmpty()) {
+            theProduct = null;
+            displayLaSearchResult = "Please type a Product ID or Name.";
+            updateView();
+            return;
+        }
+
+        //ID priority
+        if (!productId.isEmpty()) {
             theProduct = databaseRW.searchByProductId(productId); //search database
-            if(theProduct != null && theProduct.getStockQuantity()>0){
+            if (theProduct != null && theProduct.getStockQuantity() > 0) {
                 double unitPrice = theProduct.getUnitPrice();
                 String description = theProduct.getProductDescription();
                 int stock = theProduct.getStockQuantity();
@@ -47,19 +58,36 @@ public class CustomerModel {
                 String baseInfo = String.format("Product_Id: %s\n%s,\nPrice: £%.2f", productId, description, unitPrice);
                 String quantityInfo = stock < 100 ? String.format("\n%d units left.", stock) : "";
                 displayLaSearchResult = baseInfo + quantityInfo;
-                System.out.println(displayLaSearchResult);
-            }
-            else{
-                theProduct=null;
+                //System.out.println(displayLaSearchResult);
+
+            } else {
+                theProduct = null;
                 displayLaSearchResult = "No Product was found with ID " + productId;
                 System.out.println("No Product was found with ID " + productId);
             }
-        }else{
-            theProduct=null;
-            displayLaSearchResult = "Please type ProductID";
-            System.out.println("Please type ProductID.");
+
+            updateView();
+            return;
         }
-        updateView();
+    theProduct =null;
+    searchResult = databaseRW.searchProduct(productName);
+    if(searchResult ==null||searchResult.isEmpty()) {
+        displayLaSearchResult = "NO product was found" + productName;
+        System.out.println("NO product was found" + productName);
+    }
+    else {
+        StringBuilder sb = new StringBuilder();
+        sb.append(searchResult.size()).append(" product(s) found:\n\n");
+        for (Product p : searchResult) {
+            sb.append(String.format(
+                    "ID: %s\n%s\nPrice: £%.2f\nStock: %d\n\n",
+                    p.getProductId(), p.getProductDescription(), p.getUnitPrice(), p.getStockQuantity()
+            ));
+        }
+        displayLaSearchResult = sb.toString();
+    }
+    searchResult.clear();
+    updateView();
     }
 
     void addToTrolley(){
