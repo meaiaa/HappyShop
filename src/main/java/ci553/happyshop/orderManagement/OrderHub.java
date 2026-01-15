@@ -6,21 +6,20 @@ import ci553.happyshop.client.orderTracker.OrderTracker;
 import ci553.happyshop.client.picker.PickerModel;
 import ci553.happyshop.storageAccess.OrderFileManager;
 import ci553.happyshop.utility.StorageLocation;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
+
 
 /**
  * <p>{@code OrderHub} serves as the heart of the ordering system.
@@ -46,6 +45,7 @@ public class OrderHub  {
     private final Path orderedPath = StorageLocation.orderedPath;
     private final Path progressingPath = StorageLocation.progressingPath;
     private final Path collectedPath = StorageLocation.collectedPath;
+    private final PropertyChangeSupport pcs = new PropertyChangeSupport(this);
 
     private TreeMap<Integer,OrderState> orderMap = new TreeMap<>();
     private TreeMap<Integer,OrderState> OrderedOrderMap = new TreeMap<>();
@@ -85,7 +85,8 @@ public class OrderHub  {
         Path path = orderedPath;
         OrderFileManager.createOrderFile(path, orderId, orderDetail);
 
-        orderMap.put(orderId, theOrder.getState()); //add the order to orderMap,state is Ordered initially
+        orderMap.put(orderId, theOrder.getState());//add the order to orderMap,state is Ordered initially
+        fireOrderMapChanged();
         notifyOrderTrackers(); //notify OrderTrackers
         notifyPickerModels();//notify pickers
         
@@ -139,6 +140,7 @@ public class OrderHub  {
         {
             //change orderState in OrderMap, notify OrderTrackers and pickers
             orderMap.put(orderId, newState);
+            fireOrderMapChanged();
             notifyOrderTrackers();
             notifyPickerModels();
 
@@ -150,6 +152,7 @@ public class OrderHub  {
                 case OrderState.Collected:
                     OrderFileManager.updateAndMoveOrderFile(orderId, newState,progressingPath,collectedPath);
                     removeCollectedOrder(orderId); //Scheduled removal
+                    fireOrderMapChanged();
                     break;
             }
         }
@@ -172,6 +175,13 @@ public class OrderHub  {
                 notifyOrderTrackers();
             }, 10, TimeUnit.SECONDS );
         }
+    }
+
+    public void addPropertyChangeListener(PropertyChangeListener listener) {
+        pcs.addPropertyChangeListener(listener);
+    }
+    public void removePropertyChangeListener(PropertyChangeListener listener) {
+        pcs.removePropertyChangeListener(listener);
     }
 
     // Reads details of an order for display in the picker once they started preparing the order.
@@ -203,7 +213,13 @@ public class OrderHub  {
         notifyPickerModels();
         System.out.println("orderMap initilized. "+ orderMap.size() + " orders in total, including:");
         System.out.println( orderedIds.size() + " Ordered orders, " +progressingIds.size() + " Progressing orders " );
+        fireOrderMapChanged();
     }
+
+    private void fireOrderMapChanged() {
+        pcs.firePropertyChange("orderMap", null, new TreeMap<>(orderMap));
+    }
+
 
     // Loads a list of order IDs from the specified directory.
     // Used internally by initializeOrderMap().

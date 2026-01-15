@@ -13,6 +13,9 @@ import javafx.stage.Stage;
 
 import java.util.Map;
 import java.util.TreeMap;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+
 
 /**
  * OrderTracker class is for tracking orders and their states.
@@ -20,7 +23,7 @@ import java.util.TreeMap;
  * The ordersMap data is received from the OrderHub.
  */
 
-public class OrderTracker {
+public class OrderTracker implements PropertyChangeListener {
     private final int WIDTH = UIStyle.trackerWinWidth;
     private final int HEIGHT = UIStyle.trackerWinHeight;
 
@@ -57,7 +60,7 @@ public class OrderTracker {
      */
     public void registerWithOrderHub(){
         OrderHub orderHub = OrderHub.getOrderHub();
-        orderHub.registerOrderTracker(this);
+        orderHub.addPropertyChangeListener(this);
     }
 
     /**
@@ -82,5 +85,15 @@ public class OrderTracker {
         String textDisplay = sb.toString();
         taDisplay.setText(textDisplay);
     }
+@Override
+public void propertyChange(PropertyChangeEvent evt) {
+    if (!"orderMap".equals(evt.getPropertyName())) {
+        return;
+    }
 
+    @SuppressWarnings("unchecked")
+            TreeMap<Integer, OrderState> om = (TreeMap<Integer, OrderState>) evt.getNewValue();
+    setOrderMap(om);
+
+    }
 }
