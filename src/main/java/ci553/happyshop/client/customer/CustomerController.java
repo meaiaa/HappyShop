@@ -1,10 +1,16 @@
 package ci553.happyshop.client.customer;
 
+import ci553.happyshop.catalogue.Product;
+import javafx.fxml.FXML;
+
 import java.io.IOException;
 import java.sql.SQLException;
 
 public class CustomerController {
     public CustomerModel cusModel;
+    public void addFromSearchResult(Product p, int qty) throws SQLException {
+        cusModel.addFromSearchResult(p, qty);
+    }
 
     public void doAction(String action) throws SQLException, IOException {
         switch (action) {
@@ -26,4 +32,6 @@ public class CustomerController {
         }
     }
 
-}
+    }
+
+

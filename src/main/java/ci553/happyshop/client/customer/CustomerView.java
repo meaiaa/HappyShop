@@ -1,5 +1,6 @@
 package ci553.happyshop.client.customer;
 
+import ci553.happyshop.catalogue.Product;
 import ci553.happyshop.utility.UIStyle;
 import ci553.happyshop.utility.WinPosManager;
 import ci553.happyshop.utility.WindowBounds;
@@ -14,6 +15,8 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
 import javafx.stage.Stage;
+import javafx.scene.control.ListCell;
+import javafx.scene.control.ListView;
 
 import java.io.IOException;
 import java.sql.SQLException;
@@ -27,6 +30,9 @@ import java.sql.SQLException;
  */
 
 public class CustomerView  {
+    public void updateSearchResult(java.util.List<Product> result) {
+        lvSearchResults.getItems().setAll(result);
+    }
     public CustomerController cusController;
 
     private final int WIDTH = UIStyle.customerWinWidth;
@@ -39,6 +45,7 @@ public class CustomerView  {
 
     TextField tfId; //for user input on the search page. Made accessible so it can be accessed or modified by CustomerModel
     TextField tfName; //for user input on the search page. Made accessible so it can be accessed by CustomerModel
+    ListView<Product> lvSearchResults;
 
     //four controllers needs updating when program going on
     private ImageView ivProduct; //image area in searchPage
@@ -76,20 +83,20 @@ public class CustomerView  {
     }
 
     private VBox createSearchPage() {
-        Label laPageTitle = new Label("Search by Product ID/Name");
+        Label laPageTitle = new Label("Search by Products");
         laPageTitle.setStyle(UIStyle.labelTitleStyle);
 
-        Label laId = new Label("ID:      ");
+        Label laId = new Label("Product ID");
         laId.setStyle(UIStyle.labelStyle);
         tfId = new TextField();
-        tfId.setPromptText("eg. 0001");
+        tfId.setPromptText("Search by Product ID");
         tfId.setStyle(UIStyle.textFiledStyle);
         HBox hbId = new HBox(10, laId, tfId);
 
-        Label laName = new Label("Name:");
+        Label laName = new Label("Product Name:");
         laName.setStyle(UIStyle.labelStyle);
         tfName = new TextField();
-        tfName.setPromptText("implement it if you want");
+        tfName.setPromptText("Search by Product Name");
         tfName.setStyle(UIStyle.textFiledStyle);
         HBox hbName = new HBox(10, laName, tfName);
 
@@ -101,6 +108,50 @@ public class CustomerView  {
         btnAddToTrolley.setStyle(UIStyle.buttonStyle);
         btnAddToTrolley.setOnAction(this::buttonClicked);
         HBox hbBtns = new HBox(10, laPlaceHolder,btnSearch, btnAddToTrolley);
+        lvSearchResults = new ListView<>();
+        lvSearchResults.setPrefHeight(260);
+        lvSearchResults.setPrefWidth(COLUMN_WIDTH);
+        lvSearchResults.setCellFactory(list -> new ListCell<Product>() {
+            private final ImageView iv = new ImageView();
+            private final Label lb = new Label();
+            private final ComboBox<Integer> cbQty = new ComboBox<>();
+            private final Button btnAdd = new Button("+");
+            private final HBox row = new HBox(10, iv, lb, cbQty, btnAdd);
+
+            {
+                iv.setFitWidth(50);
+                iv.setFitHeight(50);
+                iv.setPreserveRatio(true);
+                lb.setWrapText(true);
+                lb.setMinWidth(170);
+                cbQty.getItems().addAll(1, 2, 3, 4, 5, 10, 20, 50);
+                cbQty.setValue(1);
+                btnAdd.setOnAction(e -> {
+                    Product p = getItem();
+                    if (p != null) {
+                        try {
+                            cusController.addFromSearchResult(p, cbQty.getValue());
+                        } catch (SQLException ex) {
+                            ex.printStackTrace();
+                        }
+                    }
+                });
+                row.setAlignment(Pos.CENTER);
+            }
+            @Override
+            protected void updateItem(Product p, boolean empty) {
+                super.updateItem(p, empty);
+                if (empty || p == null) {
+                    setGraphic(null);
+                } else {
+                    iv.setImage(new Image(p.getProductImageName()));
+                    lb.setText(String.format(
+                            "ID: %s\n%s\n£%.2f | Stock: %d",
+                            p.getProductId(), p.getProductDescription(), p.getUnitPrice(), p.getStockQuantity()
+                    ));
+                    setGraphic(row);
+                }
+            }});
 
         ivProduct = new ImageView("imageHolder.jpg");
         ivProduct.setFitHeight(60);
@@ -115,7 +166,7 @@ public class CustomerView  {
         HBox hbSearchResult = new HBox(5, ivProduct, lbProductInfo);
         hbSearchResult.setAlignment(Pos.CENTER_LEFT);
 
-        VBox vbSearchPage = new VBox(15, laPageTitle, hbId, hbName, hbBtns, hbSearchResult);
+        VBox vbSearchPage = new VBox(15, laPageTitle, hbId, hbName, hbBtns, lvSearchResults, hbSearchResult);
         vbSearchPage.setPrefWidth(COLUMN_WIDTH);
         vbSearchPage.setAlignment(Pos.TOP_CENTER);
         vbSearchPage.setStyle("-fx-padding: 15px;");

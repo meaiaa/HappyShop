@@ -9,7 +9,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * This class is responsible for seting up the folder structure and orderCounter file required for the order system.
+ * This class is responsible for setting up the folder structure and orderCounter file required for the order system.
  *
  * ⚠ WARNING:
  *  Running this class will WIPE ALL EXISTING ORDERS by deleting all files inside the orders folder.

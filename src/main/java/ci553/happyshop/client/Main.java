@@ -46,9 +46,6 @@ public class Main extends Application {
         startPickerClient();
         startOrderTracker();
 
-        startCustomerClient();
-        startPickerClient();
-        startOrderTracker();
 
         // Initializes the order map for the OrderHub. This must be called after starting the observer clients
         // (such as OrderTracker and Picker clients) to ensure they are properly registered for receiving updates.
@@ -81,9 +78,9 @@ public class Main extends Application {
         cusModel.databaseRW = databaseRW;
         cusView.start(new Stage());
 
-        //RemoveProductNotifier removeProductNotifier = new RemoveProductNotifier();
-        //removeProductNotifier.cusView = cusView;
-        //cusModel.removeProductNotifier = removeProductNotifier;
+        RemoveProductNotifier removeProductNotifier = new RemoveProductNotifier();
+        removeProductNotifier.cusView = cusView;
+        cusModel.removeProductNotifier = removeProductNotifier;
     }
 
     /** The picker GUI, - for staff to pack customer's order,

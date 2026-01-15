@@ -11,9 +11,9 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.Comparator;
+import java.util.List;
 
 /**
  * TODO
@@ -23,10 +23,12 @@ import java.util.Map;
 public class CustomerModel {
     public CustomerView cusView;
     public DatabaseRW databaseRW; //Interface type, not specific implementation
-                                  //Benefits: Flexibility: Easily change the database implementation.
 
-    private Product theProduct =null; // product found from search
-    private ArrayList<Product> trolley =  new ArrayList<>(); // a list of products in trolley
+
+
+    private Product theProduct = null; // product found from search
+    private ArrayList<Product> trolley = new ArrayList<>(); // a list of products in trolley
+    ArrayList<Product> searchResult = new ArrayList<>();
 
     // Four UI elements to be passed to CustomerView for display updates.
     private String imageName = "imageHolder.jpg";                // Image to show in product preview (Search Page)
@@ -34,7 +36,7 @@ public class CustomerModel {
     private String displayTaTrolley = "";                                // Text area content showing current trolley items (Trolley Page)
     private String displayTaReceipt = "";                                // Text area content showing receipt after checkout (Receipt Page)
 
-    //SELECT productID, description, image, unitPrice,inStock quantity
+    //SELECT productID, Product Name, description, image, unitPrice,inStock quantity
     void search() throws SQLException {
         String productId = cusView.tfId.getText().trim();
         String productName = cusView.tfName.getText().trim();
@@ -98,7 +100,8 @@ public class CustomerModel {
             //TODO
             // 1. Merges items with the same product ID (combining their quantities).
             // 2. Sorts the products in the trolley by product ID.
-            trolley.add(theProduct);
+            //trolley.add(theProduct);
+            makeOrganisedTrolley();
             displayTaTrolley = ProductListFormatter.buildString(trolley); //build a String for trolley so that we can show it
         }
         else{
@@ -125,7 +128,7 @@ public class CustomerModel {
 
     void sortTrolleyByProductId(){
         trolley.sort(Comparator.comparing(Product::getProductId));
-    }
+    };
 
     public RemoveProductNotifier removeProductNotifier;{}
 
@@ -166,6 +169,19 @@ public class CustomerModel {
                 //TODO
                 // Add the following logic here:
                 // 1. Remove products with insufficient stock from the trolley.
+                for (Product insufficient : insufficientProducts) {
+                    String badId = insufficient.getProductId();
+                    trolley.removeIf(p -> p.getProductId().equals(badId));
+                    sortTrolleyByProductId();
+                    displayTaTrolley = ProductListFormatter.buildString(trolley);
+                    if (removeProductNotifier != null){
+                        removeProductNotifier.showRemovalMsg(errorMsg.toString());
+                        displayTaTrolley = "Items removed due to insufficient stock";
+                    }
+                    if (removeProductNotifier != null){
+                        removeProductNotifier.closeNotifierWindow();
+                    }
+                }
                 // 2. Trigger a message window to notify the customer about the insufficient stock, rather than directly changing displayLaSearchResult.
                 //You can use the provided RemoveProductNotifier class and its showRemovalMsg method for this purpose.
                 //remember close the message window where appropriate (using method closeNotifierWindow() of RemoveProductNotifier class)
@@ -203,6 +219,9 @@ public class CustomerModel {
     void cancel(){
         trolley.clear();
         displayTaTrolley="";
+        if (removeProductNotifier != null){
+            removeProductNotifier.closeNotifierWindow();
+        }
         updateView();
     }
     void closeReceipt(){
@@ -222,6 +241,7 @@ public class CustomerModel {
             imageName = "imageHolder.jpg";
         }
         cusView.update(imageName, displayLaSearchResult, displayTaTrolley,displayTaReceipt);
+        cusView.updateSearchResult(searchResult);
     }
      // extra notes:
      //Path.toUri(): Converts a Path object (a file or a directory path) to a URI object.
@@ -230,5 +250,15 @@ public class CustomerModel {
     //for test only
     public ArrayList<Product> getTrolley() {
         return trolley;
+    }
+    public void setTheProduct(Product theProduct) {
+        this.theProduct = theProduct;
+    }
+    void addFromSearchResult(Product p, int qty) {
+        if(theProduct == null || qty <= 0) return;
+        Product chosen = new Product(p.getProductId(), p.getProductDescription(), p.getProductImageName(), p.getUnitPrice(), p.getStockQuantity());
+        chosen.setOrderedQuantity(qty);
+        theProduct = chosen;
+        addToTrolley();
     }
 }
