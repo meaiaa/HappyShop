@@ -90,7 +90,7 @@ public class SetDatabase {
                         ")",
 
                 // Insert data into ProductTable
-                "INSERT INTO ProductTable VALUES('0001', '40 inch TV', 269.00,'0001.jpg',100)",
+                "INSERT INTO ProductTable VALUES('0001', '40 inch TV', 269.00,'0001.jpg',1)",
                 "INSERT INTO ProductTable VALUES('0002', 'DAB Radio', 29.99, '0002.jpg',100)",
                 "INSERT INTO ProductTable VALUES('0003', 'Toaster', 19.99, '0003.jpg',100)",
                 "INSERT INTO ProductTable VALUES('0004', 'Watch', 29.99, '0004.jpg',100)",
